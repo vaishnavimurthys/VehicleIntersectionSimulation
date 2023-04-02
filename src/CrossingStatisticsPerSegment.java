@@ -10,7 +10,7 @@ public class CrossingStatisticsPerSegment {
 
     int totalEmissionFromWaiting;
 
-    HashMap<Phases, ArrayList<Vehicle>> vehiclesCrossedPerPhase;
+    HashMap<Phase, ArrayList<Vehicle>> vehiclesCrossedPerPhase;
 
 
     public CrossingStatisticsPerSegment(Segment segment) {
@@ -32,7 +32,7 @@ public class CrossingStatisticsPerSegment {
 
         vehiclesInSegment.forEach(vehicle -> {
 
-            Phases phase = PhaseMap.map.get(vehicle.segment.name() + "+" + vehicle.direction.name());
+            Phase phase = PhaseMap.map.get(vehicle.segment.name() + "+" + vehicle.direction.name());
 
             if (vehicle.status == CrossStatus.WAITING) {
                 numberOfVehicleWaiting++;

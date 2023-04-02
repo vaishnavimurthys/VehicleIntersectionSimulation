@@ -9,6 +9,23 @@ public class Vehicle {
 
     public Segment segment;
 
+    public Phase phase;
+
+    @Override
+    public String toString() {
+        return "Vehicle{" +
+                "vehicleNumber='" + vehicleNumber + '\'' +
+                ", type=" + type +
+                ", crossTime=" + crossTime +
+                ", direction=" + direction +
+                ", status=" + status +
+                ", length=" + length +
+                ", emissionRate=" + emissionRate +
+                ", segment=" + segment +
+                ", phase=" + phase +
+                '}';
+    }
+
     public Vehicle(String vehicleNumber, VehicleType type, int crossTime, Direction direction, CrossStatus status, int length, int emissionRate, Segment segment) {
         this.vehicleNumber = vehicleNumber;
         this.type = type;
@@ -18,5 +35,8 @@ public class Vehicle {
         this.length = length;
         this.emissionRate = emissionRate;
         this.segment = segment;
+        this.phase = PhaseMap.map.get(segment.name() + "+" + direction.name());
     }
+
+
 }

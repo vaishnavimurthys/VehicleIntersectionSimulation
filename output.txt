@@ -1,5 +1,6 @@
 Total number of vehicles crossed per phase:
 | Phase No. | Vehicle Crossed |
+|       SIX |               2 |
 
-Average wait time to cross: 3
-Total emissions: 12
+Average wait time to cross: 6
+Total emissions: 24
