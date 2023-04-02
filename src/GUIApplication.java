@@ -56,6 +56,8 @@ public class GUIApplication extends JFrame implements ActionListener {
 
         crossingStatistics = new CrossingStatistics(vehicles, intersections);
 
+
+
         mainPanel = new JPanel();
         mainPanel.setPreferredSize(new Dimension(1500, 1200));
         mainPanel.setLayout(null);
