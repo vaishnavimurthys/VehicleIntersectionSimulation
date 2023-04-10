@@ -2,23 +2,38 @@ import java.util.*;
 
 public class TrafficController {
 
-    //this can be a shared resource??
+    // A HashMap representing the queues of vehicles for each segment and phase
     public HashMap<Segment, HashMap<Phase, LinkedList<VehicleInSegment>>> queues;
 
     int totalTimeElapsed;
 
-    RoadIntersection roadIntersection;
+    final RoadIntersection roadIntersection;
 
-    TrafficController(ArrayList<Vehicle> vehicles, RoadIntersection roadIntersection) {
+    final PhaseController phaseController;
+
+    GUIApplication guiApplication;
+
+    ArrayList<VehicleInSegment> masterVehicleList;
+
+    ArrayList<Vehicle> vehiclesFromCsv;
+
+    // TrafficController constructor
+    TrafficController(ArrayList<Vehicle> vehicles, ArrayList<VehicleInSegment> vehiclesLinedUp, RoadIntersection roadIntersection, PhaseController phaseController, GUIApplication gui) throws InterruptedException {
         this.roadIntersection = roadIntersection;
+        this.phaseController = phaseController;
+        this.guiApplication = gui;
+        this.masterVehicleList = vehiclesLinedUp;
+        this.vehiclesFromCsv = vehicles;
+
         createQueuePerSegment();
-        addVehiclesToQueues(vehicles);
 
-        //initiate traffic arrival
-        simulateVehicleArrival();
+      // Initialize and start the VehicleArrivalSimulator thread
 
+        VehicleArrivalSimulator vehicleArrivalSimulator = new VehicleArrivalSimulator(queues, roadIntersection, phaseController, guiApplication, masterVehicleList, vehiclesFromCsv, this);
+        Thread vehicleArrivalSimulatorThread = new Thread(vehicleArrivalSimulator);
+        vehicleArrivalSimulatorThread.start();
     }
-
+// Creates a queue for each segment and phase combination
     private void createQueuePerSegment() {
         this.queues = new HashMap<>();
 
@@ -29,48 +44,9 @@ public class TrafficController {
         });
     }
 
-    private void addVehiclesToQueues(ArrayList<Vehicle> vehicles) {
-        vehicles.forEach(vehicle -> {
-            VehicleInSegment vehicleInSegment =
-                    new VehicleInSegment(vehicle.vehicleNumber,
-                            vehicle.type,
-                            vehicle.crossTime,
-                            vehicle.direction,
-                            vehicle.status,
-                            vehicle.length,
-                            vehicle.emissionRate,
-                            vehicle.segment,
-                            0,
-                            roadIntersection);
-
-
-            queues.get(vehicle.segment).get(vehicle.phase).add(vehicleInSegment);
-        });
+    // Removes the given vehicle from the appropriate queue
+    public void removeVehicleFromQueue(VehicleInSegment vehicleToBeRemoved) {
+        System.out.println("Removing " + vehicleToBeRemoved.vehicleNumber + " from queue.");
+        queues.get(vehicleToBeRemoved.segment).get(vehicleToBeRemoved.phase).remove(vehicleToBeRemoved);
     }
-
-
-    private void simulateVehicleArrival() {
-        Vehicle v = new Vehicle(Utils.generateAlphaNumericString(7),
-                VehicleType.getRandom(),
-                (int) Utils.generateRandomNumber(0, 30),
-                Direction.getRandom(),
-                CrossStatus.getRandom(),
-                (int) Utils.generateRandomNumber(0, 30),
-                (int) Utils.generateRandomNumber(0, 30),
-                Segment.getRandom());
-
-        System.out.println("Adding " + v);
-
-        addVehiclesToQueues(new ArrayList<>() {{
-            add(v);
-        }});
-
-        try {
-            Thread.sleep(60000);
-        } catch (InterruptedException ex) {
-            System.out.println(ex);
-        }
-    }
-
-
 }

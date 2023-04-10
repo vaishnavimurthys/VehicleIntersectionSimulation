@@ -9,7 +9,7 @@ import java.util.stream.*;
 
 public class GUIApplication extends JFrame implements ActionListener {
     // The vehicle list to be displayed in a table.
-    private ArrayList<Vehicle> vehicles;
+    private ArrayList<VehicleInSegment> vehicles;
 
     private ArrayList<Intersection> intersections;
 
@@ -46,16 +46,19 @@ public class GUIApplication extends JFrame implements ActionListener {
 
     private JButton closeButton;
 
+    public JLabel currentPhase;
 
-    static final Object[] vehicleColumnNames = {"Vehicle Number", "Type", "Cross Time", "Direction", "Status", "Length", "Emission Rate", "Segment"};
+
+    static final Object[] vehicleColumnNames = {"Vehicle Number", "Type", "Cross Time", "Direction", "Status", "Length", "Emission Rate", "Segment", "Phase"};
     static final Object[] intersectionsColumnNames = {"Phase Number", "Phase Duration"};
     static final Object[] statisticColumnsNames = {"Segment No.", "No. of vehicles waiting", "Total wait length", "Avg crossing time"};
 
-    public GUIApplication(ArrayList<Vehicle> vehicles, ArrayList<Intersection> intersections, String outputFile) {
 
+    // Constructor for the GUI application
+    public GUIApplication(ArrayList<VehicleInSegment> vehicles, ArrayList<Intersection> intersections, String outputFile) {
 
+    // Initialize instance variables
         crossingStatistics = new CrossingStatistics(vehicles, intersections);
-
 
 
         mainPanel = new JPanel();
@@ -113,7 +116,13 @@ public class GUIApplication extends JFrame implements ActionListener {
         totalEmissionTextField.setBounds(900, 800, 100, 40);
         mainPanel.add(totalEmissionTextField);
 
+        currentPhase = new JLabel("Current Phase: 1");
 
+        currentPhase.setBounds(500, 770, 200, 40);
+        mainPanel.add(currentPhase);
+
+
+        // the GUI components
         addVehicleLabel = new JLabel("Add Vehicle");
         addVehicleLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 14));
         addVehicleLabel.setBounds(80, 350, 100, 100);
@@ -179,6 +188,7 @@ public class GUIApplication extends JFrame implements ActionListener {
         segmentComboBox.setBounds(890, 40, 130, 30);
         addVehiclePanel.add(segmentComboBox);
 
+        // Set up action listeners for buttons
         addVehicleButton = new JButton("Add Vehicle");
         addVehicleButton.setBounds(1050, 40, 150, 30);
         addVehiclePanel.add(addVehicleButton);
@@ -204,14 +214,14 @@ public class GUIApplication extends JFrame implements ActionListener {
         closeButton.addActionListener(this);
     }
 
-
+    // Methods for converting data into the required format
     private Object[][] convertVehicleIntoArrayOfArrays() {
 
         Object[][] rowData = new String[vehicles.size()][];
 
         for (int i = 0; i < vehicles.size(); i++) {
             Vehicle v = vehicles.get(i);
-            rowData[i] = new String[8];
+            rowData[i] = new String[9];
 
             rowData[i][0] = String.valueOf(v.vehicleNumber);
             rowData[i][1] = String.valueOf(v.type);
@@ -221,6 +231,7 @@ public class GUIApplication extends JFrame implements ActionListener {
             rowData[i][5] = String.valueOf(v.length);
             rowData[i][6] = String.valueOf(v.emissionRate);
             rowData[i][7] = v.segment.name();
+            rowData[i][8] = v.phase.name();
         }
 
         return rowData;
@@ -261,7 +272,7 @@ public class GUIApplication extends JFrame implements ActionListener {
 
     }
 
-
+    // Method called when buttons are clicked
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == addVehicleButton) {
@@ -281,10 +292,10 @@ public class GUIApplication extends JFrame implements ActionListener {
                 Vehicle vehicle = new Vehicle(vehicleNumber, vehicleType, Integer.parseInt(crossTime), direction, status, Integer.parseInt(length), Integer.parseInt(emissionRate), segment);
 
                 // Add the new vehicle to the list and table model
-                vehicles.add(vehicle);
+                vehicles.add((VehicleInSegment) vehicle);
                 vehicleTableModel.addRow(new Object[]{vehicleNumber, vehicleType, crossTime, direction, status, length, emissionRate, segment});
 
-                //refresh
+                //// Refresh the statistics and update the GUI
                 crossingStatistics.refreshStatistics(vehicles, intersections);
 
                 String[][] statisticData = convertStatisticsIntoArrayOfArrays();
@@ -320,7 +331,7 @@ public class GUIApplication extends JFrame implements ActionListener {
             System.exit(0);
         }
     }
-
+    // Helper methods for creating report
     private String createReport() {
         String reportItemOneHeading = "Total number of vehicles crossed per phase:\n";
         String reportItemOne = reportItemOneHeading + getVehicleCrossedPerPhase();
@@ -331,9 +342,9 @@ public class GUIApplication extends JFrame implements ActionListener {
 
         return reportItemOne + reportItemTwo + reportItemThree;
     }
-
+    // This method retrieves the number of vehicles crossed per phase and returns it as a formatted string table
     private String getVehicleCrossedPerPhase() {
-
+// Initialize a list of lists of strings to store the table contents
         List<List<String>> reportContents = new ArrayList<>();
 
         reportContents.add(new ArrayList<>(Arrays.asList("Phase No.", "Vehicle Crossed")));
@@ -350,7 +361,7 @@ public class GUIApplication extends JFrame implements ActionListener {
 
         return toReturn;
     }
-
+    // This method converts a 2D Object array into a CSV formatted string
     private String convertToCsv(Object[][] data) {
 
         StringBuilder toReturn = new StringBuilder();
@@ -361,5 +372,24 @@ public class GUIApplication extends JFrame implements ActionListener {
         }
 
         return toReturn.toString();
+    }
+    // Method to refresh the GUI when data is updated
+    public void refresh() {
+
+
+        Object[][] vehicleRowData = convertVehicleIntoArrayOfArrays();
+
+        // Set table model for vehicleTable
+
+        vehicleTableModel = new DefaultTableModel(vehicleRowData, vehicleColumnNames);
+        vehicleTable.setModel(vehicleTableModel);
+
+
+        crossingStatistics.refreshStatistics(vehicles, intersections);
+
+        String[][] statisticData = convertStatisticsIntoArrayOfArrays();
+
+        statisticTableModel = new DefaultTableModel(statisticData, statisticColumnsNames);
+        statisticTable.setModel(statisticTableModel);
     }
 }

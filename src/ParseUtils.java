@@ -7,6 +7,7 @@ import java.util.Scanner;
 public class ParseUtils {
 
 
+    // Parse vehicles from a CSV file and add them to the given list of vehicles
     public static ArrayList<Vehicle> parseVehicles(String fileName, ArrayList<Vehicle> vehicles) {
 
         try {
@@ -30,6 +31,8 @@ public class ParseUtils {
     }
 
 
+
+    // Process a single row of vehicle data and add a new vehicle to the list
     public static void processVehicleRow(String inputLine, ArrayList<Vehicle> vehicles) {
         try {
             String[] parts = StringUtil.sanitiseInput(inputLine.split(","));
@@ -51,6 +54,7 @@ public class ParseUtils {
         }
     }
 
+    // Parse intersections from a CSV file and add them to the given list of intersections
     public static ArrayList<Intersection> parseIntersections(String fileName, ArrayList<Intersection> intersections) {
         try {
             File f = new File(fileName);
@@ -74,6 +78,7 @@ public class ParseUtils {
     }
 
 
+    // Process a single row of intersection data and add a new intersection to the list
     public static void processIntersectionsRow(String inputLine, ArrayList<Intersection> intersections) {
         try {
             String[] parts = StringUtil.sanitiseInput(inputLine.split(","));
@@ -88,7 +93,7 @@ public class ParseUtils {
         }
     }
 
-
+// Write the given report string to the specified file
     public static void writeToFile(String filename, String report) {
 
         FileWriter fw;
