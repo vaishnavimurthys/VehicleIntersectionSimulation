@@ -15,9 +15,6 @@ public class Vehicle {
     public String toString() {
         return "Vehicle{" +
                 "vehicleNumber='" + vehicleNumber + '\'' +
-
-                ", status=" + status +
-
                 ", phase=" + phase +
                 '}';
     }

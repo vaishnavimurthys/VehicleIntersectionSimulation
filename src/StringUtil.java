@@ -8,7 +8,6 @@ public class StringUtil {
     public static String appendNewLineCharacter(String s) {
         return s + "\n";
     }
-// Trims whitespaces in each element of the input array and returns a new array with the sanitized elements
 
     public static String[] sanitiseInput(String[] input) {
         String[] sanitisedInput = new String[input.length];

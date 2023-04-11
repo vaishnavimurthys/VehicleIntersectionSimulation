@@ -1,92 +1,70 @@
 public class VehicleInSegment extends Vehicle implements Runnable {
 
+    public static Logger logger = Logger.getInstance();
     int vehiclePosition;
-
     int waitTime;
     final RoadIntersection roadIntersection;
-
     final PhaseController phaseController;
+    ApplicationController applicationController;
 
-    GUIApplication guiApplication;
+    VehicleInSegment preceedingVehicle;
 
-    TrafficController trafficController;
+    VehicleInSegment followingVehicle;
 
 
-    public VehicleInSegment(String vehicleNumber, VehicleType type, int crossTime, Direction direction, CrossStatus status, int length, int emissionRate, Segment segment, int vehiclePosition, RoadIntersection roadIntersection, PhaseController phaseController, GUIApplication guiApplication, TrafficController trafficController) {
-        // constructor to initialize the class variables
-
+    public VehicleInSegment(String vehicleNumber, VehicleType type, int crossTime, Direction direction, CrossStatus status, int length, int emissionRate, Segment segment, int vehiclePosition, RoadIntersection roadIntersection, PhaseController phaseController, ApplicationController applicationController, VehicleInSegment preceedingVehicle) {
         super(vehicleNumber, type, crossTime, direction, status, length, emissionRate, segment);
         this.vehiclePosition = vehiclePosition;
         this.roadIntersection = roadIntersection;
         this.phaseController = phaseController;
-        this.guiApplication = guiApplication;
-        this.trafficController = trafficController;
+        this.applicationController = applicationController;
         this.waitTime = 0;
+        this.preceedingVehicle = preceedingVehicle;
+        this.followingVehicle = null;
+    }
+
+    public static VehicleInSegment createVehicleInSegmentFromVehicle(Vehicle v, VehicleInSegment lastVehicleInSegment, RoadIntersection roadIntersection, PhaseController phaseController, ApplicationController applicationController) {
+        VehicleInSegment newVehicle = new VehicleInSegment(v.vehicleNumber, v.type, v.crossTime,
+                v.direction, v.status, v.length, v.emissionRate, v.segment,
+                lastVehicleInSegment == null ? 0 :
+                        lastVehicleInSegment.vehiclePosition + lastVehicleInSegment.length,
+                roadIntersection, phaseController, applicationController, lastVehicleInSegment);
+
+        if (lastVehicleInSegment != null) {
+            lastVehicleInSegment.followingVehicle = newVehicle;
+        }
+
+        return newVehicle;
     }
 
 
     @Override
     public void run() {
-        System.out.println("Starting " + this);// print a message indicating the vehicle has started
-
         long startTime = System.currentTimeMillis();
 
-        synchronized (this.roadIntersection) {
-
-            while (this.status != CrossStatus.CROSSED) {
-                System.out.println("VehicleStat: " + this);
-                System.out.println("Phase: " + phaseController.currentPhase);
-
-                VehicleInSegment nextVehicle = this.trafficController.queues.get(segment).get(phase).getFirst();
-
-                if (phaseController.currentPhase == phase && nextVehicle == this) {
-                    crossIntersection();
-                } else {
-                    long currTime = System.currentTimeMillis();
-                    this.waitTime = (int) (currTime - startTime);
-                    this.guiApplication.refresh();
-                    this.roadIntersection.notifyAll();
-                }
-                try {
-                    this.roadIntersection.wait();
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        System.out.println("Stopping " + this);
-    }
-    // method to cross the intersection
-    public void crossIntersection() {
-        System.out.println("Crossing: " + this);
-        this.roadIntersection.isEmpty = false;
-        this.roadIntersection.currentVehicle = this;
-
-        //do processing here
+        this.roadIntersection.getAllRoadIntersectionBufferMap().get(segment).enterIntersection(this);
 
         try {
-            System.out.println("Vehicle no. " + vehicleNumber + " crossing in " + crossTime);
-            Thread.sleep(crossTime * 1000L);
-            System.out.println("Vehicle no. " + vehicleNumber + " crossed in" + crossTime);
-        } catch (InterruptedException ex) {
-            System.out.println(ex);
+            Thread.sleep(this.crossTime * 1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
 
+        this.roadIntersection.getAllRoadIntersectionBufferMap().get(segment).exitIntersection(this);
+
+        long endTime = System.currentTimeMillis();
 
         this.status = CrossStatus.CROSSED;
-        this.roadIntersection.isEmpty = true;
 
-        this.roadIntersection.notifyAll();
-        this.guiApplication.refresh();
+        this.waitTime = (int) ((int) (endTime - startTime) / 1000L);
 
-        trafficController.removeVehicleFromQueue(this);
-
-
-        Thread t = new Thread(this);
-        t.interrupt();
+        applicationController.refresh();
     }
 
+
+    public void crossIntersection() {
+        Thread vehicleThread = new Thread(this);
+        vehicleThread.start();
+    }
 
 }

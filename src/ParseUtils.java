@@ -1,19 +1,25 @@
-
-
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class ParseUtils {
 
+    static Logger logger = Logger.getInstance();
 
-    // Parse vehicles from a CSV file and add them to the given list of vehicles
-    public static ArrayList<Vehicle> parseVehicles(String fileName, ArrayList<Vehicle> vehicles) {
+
+    public static void parseVehicles(String fileName, ArrayList<Vehicle> vehicles) {
 
         try {
-            File f = new File(fileName);
-            Scanner scanner = new Scanner(f);
+            URL urlToDictionary = Main.class.getResource("/" + fileName);
+            assert urlToDictionary != null;
+            InputStream is = urlToDictionary.openStream();
+            Scanner scanner = new Scanner(is);
             while (scanner.hasNextLine()) {
+
                 //read first line and process it
                 String inputLine = scanner.nextLine();
                 if (inputLine.length() != 0) {//ignored if blank line
@@ -23,16 +29,15 @@ public class ParseUtils {
         }
         //if the file is not found, stop with system exit
         catch (FileNotFoundException fnf) {
-            System.out.println(fileName + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + fileName + " not found");
             System.exit(0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        return null;
     }
 
 
-
-    // Process a single row of vehicle data and add a new vehicle to the list
     public static void processVehicleRow(String inputLine, ArrayList<Vehicle> vehicles) {
         try {
             String[] parts = StringUtil.sanitiseInput(inputLine.split(","));
@@ -49,16 +54,16 @@ public class ParseUtils {
             vehicles.add(new Vehicle(vehicleNumber, vehicleType, crossTime, direction, crossStatus, length, emissionRate, segment));
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log("[ERROR] [PARSER] " + e.getMessage());
             System.exit(0);
         }
     }
 
-    // Parse intersections from a CSV file and add them to the given list of intersections
-    public static ArrayList<Intersection> parseIntersections(String fileName, ArrayList<Intersection> intersections) {
+    public static void parseIntersections(String fileName, ArrayList<Intersection> intersections) {
         try {
-            File f = new File(fileName);
-            Scanner scanner = new Scanner(f);
+            URL urlToDictionary = Main.class.getResource("/" + fileName);
+            InputStream is = urlToDictionary.openStream();
+            Scanner scanner = new Scanner(is);
             while (scanner.hasNextLine()) {
                 //read first line and process it
                 String inputLine = scanner.nextLine();
@@ -70,15 +75,15 @@ public class ParseUtils {
         }
         //if the file is not found, stop with system exit
         catch (FileNotFoundException fnf) {
-            System.out.println(fileName + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + fileName + " not found");
             System.exit(0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        return null;
     }
 
 
-    // Process a single row of intersection data and add a new intersection to the list
     public static void processIntersectionsRow(String inputLine, ArrayList<Intersection> intersections) {
         try {
             String[] parts = StringUtil.sanitiseInput(inputLine.split(","));
@@ -89,11 +94,11 @@ public class ParseUtils {
             intersections.add(new Intersection(phaseNumber, phaseDuration));
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log("[ERROR] - [PARSER] - Error while parsing Intersection row");
         }
     }
 
-// Write the given report string to the specified file
+
     public static void writeToFile(String filename, String report) {
 
         FileWriter fw;
@@ -104,7 +109,7 @@ public class ParseUtils {
         }
         //message and stop if file not found
         catch (FileNotFoundException fnf) {
-            System.out.println(filename + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + filename + " not found");
             System.exit(0);
         }
         //stack trace here because we don't expect to come here

@@ -1,118 +1,91 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Locale;
 
 public class VehicleArrivalSimulator implements Runnable {
 
-    public HashMap<Segment, HashMap<Phase, LinkedList<VehicleInSegment>>> queues;
+    Logger logger = Logger.getInstance();
 
-    final RoadIntersection roadIntersection;
+    ArrayList<VehicleInSegment> vehicleInSegments;
+    Thread vehicleArrivalSimulatorThread;
+    RoadIntersection roadIntersection;
+    PhaseController phaseController;
 
-    final PhaseController phaseController;
+    SimulationData simulationData;
+    ApplicationController applicationController;
 
-    GUIApplication guiApplication;
-
-    ArrayList<VehicleInSegment> masterVehicleList;
-
-    TrafficController trafficController;
-
-    ArrayList<Vehicle> vehiclesFromCsv;
-
-    // Constructor for VehicleArrivalSimulator
-    public VehicleArrivalSimulator(HashMap<Segment, HashMap<Phase, LinkedList<VehicleInSegment>>> queues, RoadIntersection roadIntersection, PhaseController phaseController, GUIApplication guiApplication, ArrayList<VehicleInSegment> masterVehicleList, ArrayList<Vehicle> vehicleList, TrafficController trafficController) {
-        this.queues = queues;
+    public VehicleArrivalSimulator(ArrayList<Vehicle> alreadyExistingVehicles, ArrayList<VehicleInSegment> vehiclesInSegments, RoadIntersection roadIntersection, PhaseController phaseController, ApplicationController applicationController, SimulationData simulationData) {
+        this.vehicleInSegments = vehiclesInSegments;
         this.roadIntersection = roadIntersection;
-        this.phaseController = phaseController;
-        this.guiApplication = guiApplication;
-        this.masterVehicleList = masterVehicleList;
-        this.trafficController = trafficController;
-        this.vehiclesFromCsv = vehicleList;
-
-        addVehiclesToQueues(vehicleList, trafficController);
+        this.applicationController = applicationController;
+        this.simulationData = simulationData;
+        addVehiclesToQueues(alreadyExistingVehicles);
     }
 
     @Override
     public void run() {
 
         try {
-            System.out.println("Starting vehicle arrival simulation...");
-            Thread.sleep(10000);
+            Thread.sleep(20000L);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
-// Continuously generate new vehicles and add them to the queues
 
         while (true) {
-            Vehicle v = new Vehicle(Utils.generateAlphaNumericString(7),
-                    VehicleType.getRandom(),
-                    (int) Utils.generateRandomNumber(0, 30),
-                    Direction.getRandom(),
-                    CrossStatus.WAITING,
-                    (int) Utils.generateRandomNumber(0, 30),
-                    (int) Utils.generateRandomNumber(0, 30),
-                    Segment.getRandom());
-
-            System.out.println("Adding Vehicle to queue: " + v);
-
-            addVehiclesToQueues(new ArrayList<>() {{
-                add(v);
-            }}, trafficController);
-
-            guiApplication.refresh();
+            if (simulationData.getSimulationState() == SimulationState.START) {
+                Vehicle v = new Vehicle(
+                        Utils.generateAlphaNumericString(7).toUpperCase(Locale.ROOT),
+                        VehicleType.getRandom(),
+                        (int) Utils.generateRandomNumber(0, 2),
+                        Direction.getRandom(),
+                        CrossStatus.WAITING,
+                        (int) Utils.generateRandomNumber(0, 10),
+                        (int) Utils.generateRandomNumber(0, 10),
+                        Segment.getRandom());
 
 
-            try {
-                Thread.sleep(60000);
-            } catch (InterruptedException ex) {
-                System.out.println(ex);
+                logger.log("[INFO] - [ADD_VEHICLE] " + v);
+
+
+                addVehiclesToQueues(new ArrayList<>() {{
+                    add(v);
+                }});
+
+                try {
+                    Thread.sleep(10000L);
+                } catch (InterruptedException ex) {
+                    logger.log("[ERROR] - [ADD_VEHICLE] " + ex);
+                }
             }
         }
     }
 
-// Add vehicles to the appropriate queues based on their segment and phase
 
-    public void addVehiclesToQueues(ArrayList<Vehicle> vehicles, TrafficController trafficController) {
+    public void addVehiclesToQueues(ArrayList<Vehicle> vehicles) {
+        vehicles.forEach(vehicle -> {
+            VehicleInSegment lastVehicleInSegment;
 
-        ArrayList<Vehicle> vehiclesInSegments = (ArrayList<Vehicle>) vehicles.clone();
+            try {
+                lastVehicleInSegment = this.roadIntersection.getQueueForSegment(vehicle.segment).getLast();
+            } catch (Exception ex) {
+                lastVehicleInSegment = null;
+            }
 
-        try {
-            vehiclesInSegments.forEach(vehicle -> {
+            VehicleInSegment vehicleInSegment = VehicleInSegment.createVehicleInSegmentFromVehicle(vehicle, lastVehicleInSegment, roadIntersection, phaseController, applicationController);
 
-                VehicleInSegment lastVehicleInSegment;
+            if (vehicleInSegment.status == CrossStatus.WAITING) {
+                vehicleInSegment.crossIntersection();
+                this.roadIntersection.getQueueForSegment(vehicle.segment).add(vehicleInSegment);
+            }
 
-                try {
-                    lastVehicleInSegment = queues.get(vehicle.segment).get(vehicle.phase).getLast();
-                } catch (Exception ex) {
-                    lastVehicleInSegment = null;
-                }
+            this.vehicleInSegments.add(vehicleInSegment);
+            applicationController.getApplicationModel().refreshAllData();
+        });
 
-                  // Create a new VehicleInSegment instance and start its thread
+    }
 
-                VehicleInSegment vehicleInSegment =
-                        new VehicleInSegment(vehicle.vehicleNumber,
-                                vehicle.type,
-                                vehicle.crossTime,
-                                vehicle.direction,
-                                vehicle.status,
-                                vehicle.length,
-                                vehicle.emissionRate,
-                                vehicle.segment,
-                                lastVehicleInSegment == null ? 0 :
-                                        lastVehicleInSegment.vehiclePosition + lastVehicleInSegment.length,
-                                roadIntersection
-                                , phaseController
-                                , guiApplication,
-                                trafficController);
-
-                Thread vehicleThread = new Thread(vehicleInSegment);
-                vehicleThread.start();
-
-                queues.get(vehicle.segment).get(vehicle.phase).add(vehicleInSegment);
-                masterVehicleList.add(vehicleInSegment);
-                guiApplication.refresh();
-            });
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
+    public void simulateVehicleArrival() {
+        vehicleArrivalSimulatorThread = new Thread(this);
+        vehicleArrivalSimulatorThread.start();
     }
 }
