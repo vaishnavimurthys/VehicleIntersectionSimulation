@@ -1,0 +1,7 @@
+<------------APPLICATION STARTING UP--------------->
+[INFO] - [PHASE_CHANGE] Switching to Phase-ONE for 5s
+[INFO] - [PHASE_CHANGE] Switching to Phase-TWO for 5s
+[INFO] - [PHASE_CHANGE] Switching to Phase-THREE for 5s
+[INFO] - [PHASE_CHANGE] Switching to Phase-FOUR for 5s
+[INFO] - [ADD_VEHICLE] Vehicle{vehicleNumber='FAD9355', phase=SIX}
+[INFO] - [PHASE_CHANGE] Switching to Phase-FIVE for 5s

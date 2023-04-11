@@ -1,16 +1,20 @@
-import java.util.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CrossingStatisticsPerSegment {
     Segment segment;
     int numberOfVehicleWaiting;
     int totalLengthOfWaitingVehicles;
     int avgWaitingTime;
-    ArrayList<Vehicle> vehiclesInSegment;
+    int avgCrossingTime;
+    ArrayList<VehicleInSegment> vehiclesInSegment;
 
     int totalEmissionFromWaiting;
 
-    HashMap<Phase, ArrayList<Vehicle>> vehiclesCrossedPerPhase;
+    HashMap<Phase, ArrayList<VehicleInSegment>> vehiclesCrossedPerPhase;
+
+    HashMap<Phase, Integer> avgWaitTimePerPhase;
 
 
     public CrossingStatisticsPerSegment(Segment segment) {
@@ -24,11 +28,12 @@ public class CrossingStatisticsPerSegment {
 
     public void refreshCrossingStatistics() {
         AtomicInteger totalWaitTime = new AtomicInteger();
+        AtomicInteger totalCrossTime = new AtomicInteger();
 
+        avgWaitTimePerPhase = new HashMap<>();
         vehiclesCrossedPerPhase = new HashMap<>();
 
         AtomicInteger counter = new AtomicInteger();
-
 
         vehiclesInSegment.forEach(vehicle -> {
 
@@ -37,16 +42,23 @@ public class CrossingStatisticsPerSegment {
             if (vehicle.status == CrossStatus.WAITING) {
                 numberOfVehicleWaiting++;
                 totalLengthOfWaitingVehicles += vehicle.length;
-                totalEmissionFromWaiting += vehicle.emissionRate;
             } else if (vehicle.status == CrossStatus.CROSSED) {
                 vehiclesCrossedPerPhase.computeIfAbsent(phase, k -> new ArrayList<>());
                 vehiclesCrossedPerPhase.get(phase).add(vehicle);
+                totalCrossTime.getAndAdd(vehicle.crossTime);
+                totalEmissionFromWaiting = vehicle.crossTime * vehicle.emissionRate;
+                totalWaitTime.addAndGet(vehicle.waitTime);
+
+                avgWaitTimePerPhase.computeIfAbsent(phase, k -> 0);
+                Integer avgWaitingTimeForCurrPhase = avgWaitTimePerPhase.get(vehicle.phase) + vehicle.waitTime / vehiclesCrossedPerPhase.get(phase).size();
+                avgWaitTimePerPhase.put(vehicle.phase, avgWaitingTimeForCurrPhase);
             }
-            totalWaitTime.addAndGet(vehicle.crossTime);
+
             counter.getAndIncrement();
         });
 
-        if (vehiclesInSegment.size() > 0) {
+        if (!vehiclesInSegment.isEmpty()) {
+            avgCrossingTime = totalCrossTime.get() / vehiclesInSegment.size();
             avgWaitingTime = Integer.parseInt(String.valueOf(totalWaitTime)) / vehiclesInSegment.size();
         }
 

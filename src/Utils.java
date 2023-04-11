@@ -1,7 +1,6 @@
-import java.util.*;
+import java.util.UUID;
 
 public class Utils {
-
 
     public static double generateRandomNumber(int min, int max) {
         return Math.random() * (max - min + 1) + min;

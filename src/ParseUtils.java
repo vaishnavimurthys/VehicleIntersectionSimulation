@@ -1,18 +1,25 @@
-
-
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class ParseUtils {
 
+    static Logger logger = Logger.getInstance();
 
-    public static ArrayList<Vehicle> parseVehicles(String fileName, ArrayList<Vehicle> vehicles) {
+
+    public static void parseVehicles(String fileName, ArrayList<Vehicle> vehicles) {
 
         try {
-            File f = new File(fileName);
-            Scanner scanner = new Scanner(f);
+            URL urlToDictionary = Main.class.getResource("/" + fileName);
+            assert urlToDictionary != null;
+            InputStream is = urlToDictionary.openStream();
+            Scanner scanner = new Scanner(is);
             while (scanner.hasNextLine()) {
+
                 //read first line and process it
                 String inputLine = scanner.nextLine();
                 if (inputLine.length() != 0) {//ignored if blank line
@@ -22,11 +29,12 @@ public class ParseUtils {
         }
         //if the file is not found, stop with system exit
         catch (FileNotFoundException fnf) {
-            System.out.println(fileName + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + fileName + " not found");
             System.exit(0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        return null;
     }
 
 
@@ -46,15 +54,16 @@ public class ParseUtils {
             vehicles.add(new Vehicle(vehicleNumber, vehicleType, crossTime, direction, crossStatus, length, emissionRate, segment));
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log("[ERROR] [PARSER] " + e.getMessage());
             System.exit(0);
         }
     }
 
-    public static ArrayList<Intersection> parseIntersections(String fileName, ArrayList<Intersection> intersections) {
+    public static void parseIntersections(String fileName, ArrayList<Intersection> intersections) {
         try {
-            File f = new File(fileName);
-            Scanner scanner = new Scanner(f);
+            URL urlToDictionary = Main.class.getResource("/" + fileName);
+            InputStream is = urlToDictionary.openStream();
+            Scanner scanner = new Scanner(is);
             while (scanner.hasNextLine()) {
                 //read first line and process it
                 String inputLine = scanner.nextLine();
@@ -66,11 +75,12 @@ public class ParseUtils {
         }
         //if the file is not found, stop with system exit
         catch (FileNotFoundException fnf) {
-            System.out.println(fileName + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + fileName + " not found");
             System.exit(0);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
-        return null;
     }
 
 
@@ -84,7 +94,7 @@ public class ParseUtils {
             intersections.add(new Intersection(phaseNumber, phaseDuration));
 
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            logger.log("[ERROR] - [PARSER] - Error while parsing Intersection row");
         }
     }
 
@@ -99,7 +109,7 @@ public class ParseUtils {
         }
         //message and stop if file not found
         catch (FileNotFoundException fnf) {
-            System.out.println(filename + " not found ");
+            logger.log("[ERROR] - [PARSER] - " + filename + " not found");
             System.exit(0);
         }
         //stack trace here because we don't expect to come here

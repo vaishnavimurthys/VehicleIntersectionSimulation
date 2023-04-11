@@ -1,5 +1,6 @@
 import java.util.*;
-import java.util.stream.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class PhaseMap {
     public static Map<String, Phase> map = Stream.of(new Object[][]{
@@ -22,8 +23,6 @@ public class PhaseMap {
         put(Segment.S1, new HashSet<>(Arrays.asList(Phase.ONE, Phase.SIX)));
         put(Segment.S2, new HashSet<>(Arrays.asList(Phase.FOUR, Phase.SEVEN)));
         put(Segment.S3, new HashSet<>(Arrays.asList(Phase.TWO, Phase.FIVE)));
-        put(Segment.S4, new HashSet<>(Arrays.asList(Phase.ONE, Phase.SIX)));
+        put(Segment.S4, new HashSet<>(Arrays.asList(Phase.THREE, Phase.EIGHT)));
     }};
-
-
 }

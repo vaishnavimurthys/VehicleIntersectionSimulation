@@ -1,37 +1,36 @@
 import java.util.ArrayList;
 
 public class Main {
-    public static void main(String[] args) {
+
+    private static Logger logger = Logger.getInstance();
+
+    public static void main(String[] args) throws InterruptedException {
+        logger.log("<------------APPLICATION STARTING UP--------------->");
+
         ArrayList<Vehicle> vehicles = new ArrayList<>();
         ArrayList<Intersection> intersections = new ArrayList<>();
+
+
         ParseUtils.parseVehicles("vehicles.csv", vehicles);
         ParseUtils.parseIntersections("intersection.csv", intersections);
 
-
         startUpApplication(vehicles, intersections, "output.txt");
-
-
-    }
-
-    private static void runGuiApplication(ArrayList<Vehicle> vehicles, ArrayList<Intersection> intersections, String outputFile) {
-        new GUIApplication(vehicles, intersections, outputFile);
     }
 
 
-    private static void startUpApplication(ArrayList<Vehicle> vehicles, ArrayList<Intersection> intersections, String outputFile) {
-
+    public static void startUpApplication(ArrayList<Vehicle> alreadyExistingVehicles, ArrayList<Intersection> intersections, String outputFile) {
+        ArrayList<VehicleInSegment> vehiclesInSegments = new ArrayList<>();
+        SimulationData simulationData = new SimulationData();
         RoadIntersection roadIntersection = new RoadIntersection();
+        PhaseController phaseController = new PhaseController();
 
-        PhaseController phaseController = new PhaseController(intersections);
-        Thread thread = new Thread(phaseController);
-        thread.start();
+        View view = new View();
+        ApplicationModel applicationModel = new ApplicationModel(phaseController, vehiclesInSegments, intersections, simulationData, roadIntersection);
+        ApplicationController applicationController = new ApplicationController(view, applicationModel);
 
-        System.out.println("here");
-
-        TrafficController trafficController = new TrafficController(vehicles, roadIntersection);
-
-        runGuiApplication(vehicles, intersections, outputFile);
-
+        VehicleArrivalSimulator vehicleArrivalSimulator = new VehicleArrivalSimulator(alreadyExistingVehicles, vehiclesInSegments, roadIntersection, phaseController, applicationController, simulationData);
+        new CentralTrafficController(vehiclesInSegments, roadIntersection, phaseController, vehicleArrivalSimulator, applicationController);
     }
+
 
 }
